@@ -1,0 +1,67 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'yaml'
+require 'ipaddr'
+
+vagrant_config = YAML.load_file("provisioning/vm_config.yml")
+k8s_version = "1.15.2"
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "k8s-#{k8s_version}"
+  config.vm.box_check_update = false
+
+  # Use the ipaddr library to calculate the netmask of a given network
+  net = IPAddr.new vagrant_config['public_network']
+  netmask = net.inspect().split("/")[1].split(">")[0]
+
+  # Bring up the Devstack ovsdb/ovn-northd node on Virtualbox
+  config.vm.define "devops.master" do |master|
+    master.vm.host_name = vagrant_config['master']['host_name']
+    master.vm.network "private_network", ip: vagrant_config['master']['public-ip'], netmask: netmask, nic_type: "virtio"
+    master.vm.provision "shell", path: "provisioning/setup-hostnames.sh", privileged: true,
+      :args => "#{vagrant_config['master']['public-ip']} #{vagrant_config['master']['host_name']} #{vagrant_config['slave1']['public-ip']} #{vagrant_config['slave1']['host_name']} #{vagrant_config['slave2']['public-ip']} #{vagrant_config['slave2']['host_name']}"
+    master.vm.provision "shell", path: "provisioning/setup-master.sh", privileged: false,
+      :args => "#{k8s_version} #{vagrant_config['master']['public-ip']}"
+    master.vm.provision "shell", path: "provisioning/setup-cluster.sh", privileged: false,
+      :args => "master"
+
+    master.vm.provider "virtualbox" do |vb|
+       vb.name = "devops.master"
+       vb.memory = vagrant_config['master']['memory']
+       vb.cpus = vagrant_config['master']['cpus']
+    end
+  end
+
+  config.vm.define "devops.slave1" do |slave1|
+    slave1.vm.host_name = vagrant_config['slave1']['host_name']
+    slave1.vm.network "private_network", ip: vagrant_config['slave1']['public-ip'], netmask: netmask, nic_type: "virtio"
+    slave1.vm.provision "shell", path: "provisioning/setup-hostnames.sh", privileged: true,
+      :args => "#{vagrant_config['master']['public-ip']} #{vagrant_config['master']['host_name']} #{vagrant_config['slave1']['public-ip']} #{vagrant_config['slave1']['host_name']} #{vagrant_config['slave2']['public-ip']} #{vagrant_config['slave2']['host_name']}"
+    slave1.vm.provision "shell", path: "provisioning/setup-minion.sh", privileged: false
+    slave1.vm.provision "shell", path: "provisioning/setup-cluster.sh", privileged: false,
+      :args => "slave"
+
+    slave1.vm.provider "virtualbox" do |vb|
+       vb.name = "devops.slave1"
+       vb.memory = vagrant_config['slave1']['memory']
+       vb.cpus = vagrant_config['slave1']['cpus']
+    end
+  end
+
+  config.vm.define "devops.slave2" do |slave2|
+    slave2.vm.host_name = vagrant_config['slave2']['host_name']
+    slave2.vm.network "private_network", ip: vagrant_config['slave2']['public-ip'], netmask: netmask, nic_type: "virtio"
+    slave2.vm.provision "shell", path: "provisioning/setup-hostnames.sh", privileged: true,
+      :args => "#{vagrant_config['master']['public-ip']} #{vagrant_config['master']['host_name']} #{vagrant_config['slave1']['public-ip']} #{vagrant_config['slave1']['host_name']} #{vagrant_config['slave2']['public-ip']} #{vagrant_config['slave2']['host_name']}"
+    slave2.vm.provision "shell", path: "provisioning/setup-minion.sh", privileged: false
+    slave2.vm.provision "shell", path: "provisioning/setup-cluster.sh", privileged: false,
+      :args => "slave"
+
+    slave2.vm.provider "virtualbox" do |vb|
+       vb.name = "devops.slave2"
+       vb.memory = vagrant_config['slave2']['memory']
+       vb.cpus = vagrant_config['slave2']['cpus']
+    end
+  end
+end

@@ -1,0 +1,119 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: postgresql
+  template:
+    metadata:
+      labels:
+        name: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: sameersbn/postgresql:9.5-3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: tcp
+          containerPort: 5432
+        volumeMounts:
+        - mountPath: "/var/lib/postgresql"
+          name: postgresql-data
+        env:
+        - name: DB_USER
+          value: sonarqube
+        - name: DB_PASS
+          value: pa55w0rd
+        - name: DB_NAME
+          value: sonarqube_db
+        - name: DB_EXTENSION
+          value: pg_trgm
+      volumes:
+      - name: postgresql-data
+        nfs:
+          server: 100.100.0.10
+          path: /nfsdata/sonarqube/postgresql
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: postgresql
+    labels:
+      name: postgresql
+spec:
+    ports:
+    - name: tcp
+      port: 5432
+    selector:
+      name: postgresql
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sonarqube
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: sonarqube
+  template:
+    metadata:
+      labels:
+        name: sonarqube
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: slave2
+      initContainers:
+        - name: init-sysctl
+          image: busybox:1.31
+          command:
+          - sysctl
+          - -w
+          - vm.max_map_count=262144
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            privileged: true
+      containers:
+      - name: sonarqube
+        image: sonarqube:7.9.1-community
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 9000
+        volumeMounts:
+        - mountPath: "/opt/sonarqube/"
+          name: sonarqube-data
+        env:
+        - name: SONARQUBE_JDBC_USERNAME
+          value: sonarqube
+        - name: SONARQUBE_JDBC_PASSWORD
+          value: pa55w0rd
+        - name: SONARQUBE_JDBC_URL
+          value: jdbc:postgresql://postgresql:5432/sonarqube_db
+      volumes:
+      - name: sonarqube-data
+        nfs:
+          server: 100.100.0.10
+          path: /nfsdata/sonarqube
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: sonarqube
+    labels:
+      name: sonarqube
+spec:
+    type: NodePort
+    ports:
+    - name: http
+      port: 9000
+      nodePort: 30090
+    selector:
+      name: sonarqube

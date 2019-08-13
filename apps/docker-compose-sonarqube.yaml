@@ -1,0 +1,27 @@
+version: '2'
+
+services:
+    postgresql:
+        restart: always
+        image: sameersbn/postgresql:9.5-3
+        volumes:
+            - ./db:/var/lib/postgresql:Z
+        environment:
+            - DB_USER=sonarqube
+            - DB_PASS=pa55w0rd
+            - DB_NAME=gitlabhq_production
+            - DB_EXTENSION=pg_trgm
+        
+    sonarqube:
+        restart: always
+        image: sonarqube:7.9.1-community
+        volumes:
+            - ./data:/opt/sonarqube/data
+        ports:
+            - "9000:9000"
+        depends_on:
+            - postgresql
+        environment:
+            - SONARQUBE_JDBC_USERNAME=sonarqube
+            - SONARQUBE_JDBC_PASSWORD=pa55w0rd
+            - SONARQUBE_JDBC_URL=jdbc:postgresql://postgresql:5432/sonarqube_db

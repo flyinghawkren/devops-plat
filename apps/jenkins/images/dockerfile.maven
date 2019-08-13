@@ -1,0 +1,29 @@
+FROM jenkinsci/jnlp-slave:alpine
+
+USER root
+RUN apk add --no-cache curl tar bash git openssh \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm /var/cache/apk/*
+
+## Install Maven
+ARG MAVEN_VERSION=3.5.4
+ARG USER_HOME_DIR="/root"
+ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
+
+RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
+  && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+  && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+  && rm -f /tmp/apache-maven.tar.gz \
+  && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn \
+  && mkdir /src /target \
+  && chown jenkins.jenkins /src /target
+
+ENV MAVEN_HOME /usr/share/maven
+ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+
+COPY maven_settings.xml $USER_HOME_DIR/.m2/settings.xml
+
+## start jenkins-slave
+USER jenkins
+WORKDIR /home/jenkins
+ENTRYPOINT ["jenkins-slave"]

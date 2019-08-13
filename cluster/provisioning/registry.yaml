@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: registry
+  template:
+    metadata:
+      labels:
+        name: registry
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: master
+      containers:
+      - name: registry
+        image: registry
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5000
+        volumeMounts:
+        - mountPath: "/var/lib/registry"
+          name: registry-data
+      volumes:
+      - name: registry-data
+        nfs:
+          server: 100.100.0.10
+          path: /nfsdata/registry
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: registry
+    labels:
+      name: registry
+spec:
+    type: NodePort
+    ports:
+    - port: 5000
+      nodePort: 30001
+    selector:
+      name: registry

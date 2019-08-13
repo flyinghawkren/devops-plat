@@ -1,0 +1,18 @@
+---
+public_network: "100.100.0.0/24"
+public_gateway: "100.100.0.1"
+master:
+  host_name: "master"
+  public-ip: "100.100.0.10"
+  memory: 2048
+  cpus: 2
+slave1:
+  host_name: "slave1"
+  public-ip: "100.100.0.11"
+  memory: 2048
+  cpus: 1
+slave2:
+  host_name: "slave2"
+  public-ip: "100.100.0.12"
+  memory: 2048
+  cpus: 1

@@ -4,10 +4,14 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'jnlp',
       ttyEnabled: true,
       image: 'jenkins/jnlp-slave:alpine'),
-    containerTemplate(name: 'jnlp-mvn',
+    containerTemplate(name: 'maven',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.13/devops/jnlp:maven-3.5.2')
+      image: '100.100.0.13/devops/maven:jdk8-alpine'),
+  containerTemplate(name: 'docker',
+      ttyEnabled: true,
+      command: 'cat',
+      image: 'docker:1.13.0')
   ],
   volumes: [
     hostPathVolume(hostPath: '/var/run/docker.sock', mountPath:'/var/run/docker.sock'),
@@ -17,25 +21,35 @@ podTemplate(label: label, cloud: 'kubernetes',
 
       stage('Preparation') {
         container('jnlp') {
-          git 'https://github.com/jglick/simple-maven-project-with-tests.git'
+          sh 'sleep 10'
+          git 'https://github.com/flyinghawkren/devops-plat.git'
         }
       }
 
       stage('Build') {
-        container('jnlp-mvn') {
-          sh 'mvn -Dmaven.test.failure.ignore clean package'
+        container('maven') {
+          sh 'cd demo/java && mvn -Dmaven.test.skip=true clean package'
         }
       }
-
+      
       stage('SonarCheck') {
-        container('jnlp-mvn') {
-          sh 'mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
+        container('maven') {
+          sh 'cd demo/java && mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
         }
       }
 
-      stage('Results') {
-          junit '**/target/surefire-reports/TEST-*.xml'
-          archiveArtifacts 'target/*.jar'
+      stage('UnitTest') {
+        container('maven') {
+          sh 'cd demo/java && mvn test'
+        }
+      }
+    
+    stage('BuildImage') {
+        container('docker') {
+          sh 'cd demo/java && docker build -t 100.100.0.13/app/demo:1.0 .'
+          sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
+      sh 'docker push 100.100.0.13/app/demo:1.0'
+        }
       }
     }
   }

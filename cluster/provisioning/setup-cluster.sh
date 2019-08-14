@@ -6,7 +6,7 @@ set -o xtrace
 
 CLUSTER_ROLE=$1
 
-echo '{"insecure-registries": ["100.100.0.10:30001"]}' | sudo tee /etc/docker/daemon.json
+echo '{"insecure-registries": ["100.100.0.10:30001"],"registry-mirrors": ["https://3w7si8fh.mirror.aliyuncs.com"]}' | sudo tee /etc/docker/daemon.json
 sudo groupadd docker
 sudo gpasswd -a `whoami` docker
 sudo systemctl restart docker

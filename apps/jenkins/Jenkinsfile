@@ -7,7 +7,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'maven',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.13/devops/maven:jdk8-alpine'),
+      image: '100.100.0.10:30001/devops/maven:jdk8-alpine'),
   containerTemplate(name: 'docker',
       ttyEnabled: true,
       command: 'cat',
@@ -27,29 +27,59 @@ podTemplate(label: label, cloud: 'kubernetes',
       }
 
       stage('Build') {
-        container('maven') {
-          sh 'cd demo/java && mvn -Dmaven.test.skip=true clean package'
-        }
-      }
-      
-      stage('SonarCheck') {
-        container('maven') {
-          sh 'cd demo/java && mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
-        }
-      }
+        parallel (
+          container('maven') {
+            sh 'cd demo/java && mvn -Dmaven.test.skip=true clean package'
+          }
 
-      stage('UnitTest') {
-        container('maven') {
-          sh 'cd demo/java && mvn test'
-        }
+          //   container('maven') {
+          //     sh 'cd demo/java && mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
+          //   }
+
+          container('maven') {
+            sh 'cd demo/java && mvn test'
+          }
+        )
       }
     
     stage('BuildImage') {
         container('docker') {
-          sh 'cd demo/java && docker build -t 100.100.0.13/app/demo:1.0 .'
-          sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
-      sh 'docker push 100.100.0.13/app/demo:1.0'
+          sh 'cd demo/java && docker build -t 100.100.0.10:30001/app/demo:1.0 .'
+          // withCredentials([usernamePassword(credentialsId: 'd23f551a-1e55-4bea-a9fb-5098a9ac291d',
+          //   passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+          //   sh "docker login http://100.100.0.13 -u $USERNAME -p $PASSWORD"
+          // }
+          // sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
+          sh 'docker push 100.100.0.10:30001/app/demo:1.0'
         }
       }
     }
   }
+
+
+def userInput
+try {
+  userInput = input(id: 'ProceedDeploy', message: 'Deploy to kubernetes?', parameters: [
+    [$class: 'BooleanParameterDefinition', defaultValue: true, description: '', name: 'Please confirm you agree with this']
+  ])
+} catch(err) { // input false
+  def user = err.getCauses()[0].getUser()
+  userInput = false
+  echo "Aborted by: [${user}]"
+}
+
+node {
+  if (userInput == true) {
+    stage('DeployToK8s'){
+      sleep 5
+      kubernetesDeploy(
+        kubeconfigId: '3c1addf1-6a5d-4688-b7ec-ac300ba81947',
+        configs: 'deploy.yaml',
+        dockerCredentials: [[credentialsId: 'harbor', url: 'http://100.100.0.13']],
+        enableConfigSubstitution: true)
+    }
+  } else {
+    echo "Skip deployment to kubernetes."
+    currentBuild.result = 'SUCCESS'
+  } 
+}

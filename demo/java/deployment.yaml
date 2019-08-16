@@ -15,6 +15,7 @@ spec:
       containers:
       - name: helloword
         image: 100.100.0.10:30001/app/demo:1.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         readinessProbe:

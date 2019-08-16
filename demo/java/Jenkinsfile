@@ -15,7 +15,8 @@ podTemplate(label: label, cloud: 'kubernetes',
   ],
   volumes: [
     hostPathVolume(hostPath: '/var/run/docker.sock', mountPath:'/var/run/docker.sock'),
-    hostPathVolume(hostPath: '/etc/docker/daemon.json', mountPath:'/etc/docker/daemon.json')
+    hostPathVolume(hostPath: '/etc/docker/daemon.json', mountPath:'/etc/docker/daemon.json'),
+    nfsVolume(mountPath: '/root/.m2/repository', serverAddress: '100.100.0.10', serverPath: '/nfsdata/maven')
   ]) {
     node(label) {
 
@@ -97,9 +98,10 @@ podTemplate(label: label, cloud: 'kubernetes',
       }
 
       stage('SystemTest') {
+        sleep 10
         container('jmeter') {
-          sh 'rm -rf test/report/* && jmeter -n -t test/helloword.jmx -l test/report/result.jtl -e -o test/report'
-          publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
+          sh 'mkdir -p demo/java/test/report && jmeter -n -t demo/java/test/helloworld.jmx -l demo/java/test/report/result.jtl -e -o demo/java/test/report'
+          publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/java/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
         }
       }
     }

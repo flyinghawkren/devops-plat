@@ -1,0 +1,41 @@
+def label = "pipeline-worker"
+podTemplate(label: label, cloud: 'kubernetes', 
+  containers: [
+    containerTemplate(name: 'jnlp',
+      ttyEnabled: true,
+      image: 'jenkins/jnlp-slave:alpine'),
+    containerTemplate(name: 'gcc',
+      ttyEnabled: true,
+      command: 'cat',
+      image: 'gcc:4.9.4'),
+    containerTemplate(name: 'gtest',
+      ttyEnabled: true,
+      command: 'cat',
+      image: '100.100.0.10:30001/devops/gtest:gcc-4.9.4'),
+  ],
+  volumes: [
+    hostPathVolume(hostPath: '/var/run/docker.sock', mountPath:'/var/run/docker.sock'),
+    hostPathVolume(hostPath: '/etc/docker/daemon.json', mountPath:'/etc/docker/daemon.json')
+  ]) {
+    node(label) {
+
+      stage('Preparation') {
+        container('jnlp') {
+          sh 'sleep 10'
+          git 'https://github.com/flyinghawkren/devops-plat.git'
+        }
+      }
+
+      stage('Build') {
+        container('gcc') {
+          sh 'mkdir -p demo/cpp/target && cd demo/cpp/target && cmake .. && make demo'
+        }
+      }
+
+      stage("UnitTest")
+        container('gtest') {
+          sh 'cd demo/cpp/target && make demo_test && ./demo_test'
+        }
+      }
+    }
+  }

@@ -20,7 +20,7 @@ podTemplate(label: label, cloud: 'kubernetes',
   ]) {
     node(label) {
 
-      stage('Preparation') {
+      stage('Prepare') {
         container('jnlp') {
           sh 'sleep 10'
           git 'https://github.com/flyinghawkren/devops-plat.git'
@@ -39,13 +39,13 @@ podTemplate(label: label, cloud: 'kubernetes',
       //   }
       // }
 
-      stage('UnitTest') {
+      stage('UT') {
         container('maven') {
           sh 'cd demo/java && mvn test'
         }
       }
     
-    stage('PushImage') {
+      stage('PushImage') {
         container('docker') {
           sh 'cd demo/java && docker build -t 100.100.0.10:30001/app/demo:1.0 .'
           // withCredentials([usernamePassword(credentialsId: 'd23f551a-1e55-4bea-a9fb-5098a9ac291d',
@@ -84,7 +84,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     ]) {
 
     node(label) {
-      stage('DeployPreparation') {
+      stage('DeployPrepare') {
         container('jnlp') {
           sh 'sleep 10'
           git 'https://github.com/flyinghawkren/devops-plat.git'
@@ -97,7 +97,7 @@ podTemplate(label: label, cloud: 'kubernetes',
         enableConfigSubstitution: true)
       }
 
-      stage('SystemTest') {
+      stage('ST') {
         sleep 10
         container('jmeter') {
           sh 'mkdir -p demo/java/test/report && jmeter -n -t demo/java/test/helloworld.jmx -l demo/java/test/report/result.jtl -e -o demo/java/test/report'

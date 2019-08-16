@@ -17,6 +17,12 @@ spec:
         image: 100.100.0.13/app/demo:1.0
         ports:
         - containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 3
+          periodSeconds: 3
 
 ---
 apiVersion: v1

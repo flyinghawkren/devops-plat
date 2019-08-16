@@ -1,10 +1,13 @@
-#include "inc/Add.h"
-#include <syswait.h>
-#include <stdio.h>
+#include "inc/MinMax.h"
+
+#include <unistd.h>
+
+#include <iostream>
+#include <random>
 
 int main(void) {
     while(1) {
-        printf("Hello, world!")
+        std::cout << "Hello, world!" << std::endl;
         sleep(2);
     }
 }

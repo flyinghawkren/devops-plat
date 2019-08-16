@@ -22,15 +22,15 @@ podTemplate(label: label, cloud: 'kubernetes',
       kubeconfigId: '3c1addf1-6a5d-4688-b7ec-ac300ba81947',
       configs: 'deploy.yaml',
       enableConfigSubstitution: true)
-      }
     }
+  }
     
-    node(label) {
-      stage('test') {
+  node(label) {
+    stage('test') {
       container('jmeter') {
         sh 'rm -rf /test/report/* && jmeter -n -t /test/helloword.jmx -l /test/report/result.jtl -e -o /test/report'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: '/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
-        }
       }
     }
   }
+}

@@ -1,0 +1,11 @@
+FROM cmake:alpine
+
+ARG GTEST_VERSION=1.8.1
+
+RUN cd /tmp \
+  && wget https://github.com/google/googletest/archive/release-${GTEST_VERSION}.tar.gz \
+  && tar zxf release-${GTEST_VERSION}.tar.gz \
+  && cd googletest-release-${GTEST_VERSION} \
+  && cmake . && make && make install \
+  && rm -rf /tmp/googletest-release-${GTEST_VERSION} \
+  && rm /tmp/release-${GTEST_VERSION}.tar.gz

@@ -7,11 +7,11 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'gcc',
       ttyEnabled: true,
       command: 'cat',
-      image: 'gcc:4.9.4'),
+      image: '100.100.0.10:30001/devops/cmake:alpine'),
     containerTemplate(name: 'gtest',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.10:30001/devops/gtest:gcc-4.9.4'),
+      image: '100.100.0.10:30001/devops/gtest:1.8.1-alpine'),
   ],
   volumes: [
     hostPathVolume(hostPath: '/var/run/docker.sock', mountPath:'/var/run/docker.sock'),
@@ -32,9 +32,9 @@ podTemplate(label: label, cloud: 'kubernetes',
         }
       }
 
-      stage("UnitTest")
+      stage("UnitTest") {
         container('gtest') {
-          sh 'cd demo/cpp/target && make demo_test && ./demo_test'
+          sh 'cd demo/cpp/target && make demo_test && ./demo_test --gtest_output=xml:gtestresults.xml'
         }
       }
     }

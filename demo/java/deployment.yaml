@@ -17,7 +17,7 @@ spec:
         image: 100.100.0.10:30001/app/demo:1.0
         imagePullPolicy: Always
         env:
-        - name: BUILD_NUMBER
+        - name: keyword
           value: 'BUILD_NUMBER'
         ports:
         - containerPort: 8080

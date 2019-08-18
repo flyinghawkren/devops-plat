@@ -9,7 +9,7 @@ services:
         environment:
             - DB_USER=sonarqube
             - DB_PASS=pa55w0rd
-            - DB_NAME=gitlabhq_production
+            - DB_NAME=sonarqube_db
             - DB_EXTENSION=pg_trgm
         
     sonarqube:

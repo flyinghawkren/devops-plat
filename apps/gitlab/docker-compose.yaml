@@ -1,15 +1,6 @@
 version: '2'
 
 services:
-    jenkins:
-        restart: always
-        image: jenkins/jenkins:lts-alpine
-        ports:
-            - "8080:8080"
-            - "50000:50000"
-        volumes:
-            - ./data/jenkins:/var/jenkins_home
-
     redis:
         restart: always
         image: sameersbn/redis:latest

@@ -1,8 +1,9 @@
 FROM alpine:latest
 
-RUN apk update && \
-    apk upgrade && \
-    apk --update add \
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories
+RUN apk update \
+  && apk upgrade \
+  && apk --update add \
         gcc \
         g++ \
         build-base \
@@ -10,4 +11,4 @@ RUN apk update && \
         bash \
         libstdc++ \
         cppcheck \
-    rm -rf /var/cache/apk/*
+  && rm -rf /var/cache/apk/*

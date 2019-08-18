@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: helloworld
-        image: 100.100.0.13/app/demo:1.0
+        image: 100.100.0.13/app/demo-java:1.0
         imagePullPolicy: Always
         env:
         - name: APP_VERSION

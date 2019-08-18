@@ -1,13 +1,17 @@
 #include "inc/MinMax.h"
 
-#include <unistd.h>
+#include <pistache/endpoint.h>
 
-#include <iostream>
-#include <random>
+using namespace Pistache;
 
-int main(void) {
-    while(1) {
-        std::cout << "Hello, world!" << std::endl;
-        sleep(2);
+struct HelloHandler : public Http::Handler {
+    HTTP_PROTOTYPE(HelloHandler)
+
+    void onRequest(const Http::Request&, Http::ResponseWriter writer) override {
+        writer.send(Http::Code::Ok, "Hello, World! v1.0.0");
     }
+};
+
+int main() {
+    HTTP_PROTOTYPE::listenAndServe<HelloHandler>("*:9080");
 }

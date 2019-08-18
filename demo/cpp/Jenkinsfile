@@ -4,7 +4,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'jnlp',
       ttyEnabled: true,
       image: 'jenkins/jnlp-slave:alpine'),
-    containerTemplate(name: 'gcc',
+    containerTemplate(name: 'cmake',
       ttyEnabled: true,
       command: 'cat',
       image: '100.100.0.10:30001/devops/cmake:alpine'),
@@ -12,30 +12,100 @@ podTemplate(label: label, cloud: 'kubernetes',
       ttyEnabled: true,
       command: 'cat',
       image: '100.100.0.10:30001/devops/gtest:1.8.1-alpine'),
+    containerTemplate(name: 'docker',
+      ttyEnabled: true,
+      command: 'cat',
+      image: 'docker:1.13.0')
   ],
   volumes: [
     hostPathVolume(hostPath: '/var/run/docker.sock', mountPath:'/var/run/docker.sock'),
     hostPathVolume(hostPath: '/etc/docker/daemon.json', mountPath:'/etc/docker/daemon.json')
   ]) {
-    node(label) {
 
-      stage('Preparation') {
-        container('jnlp') {
-          sh 'sleep 10'
-          git 'https://github.com/flyinghawkren/devops-plat.git'
-        }
+  node(label) {
+
+    stage('Preparation') {
+      container('jnlp') {
+        sh 'sleep 10'
+        git 'https://github.com/flyinghawkren/devops-plat.git'
       }
+    }
 
-      stage('Build') {
-        container('gcc') {
-          sh 'mkdir -p demo/cpp/target && cd demo/cpp/target && cmake .. && make demo'
-        }
+    stage('Build') {
+      container('cmake') {
+        sh 'cd /tmp \
+              && wget https://github.com/oktal/pistache/archive/master.zip \
+              && unzip master.zip \
+              && cd pistache-master \
+              && cmake . && make && make install \
+              && ln -s /usr/local/lib64/libpistache.so /usr/lib/libpistache.so.0'
+        sh 'mkdir -p demo/cpp/target && cd demo/cpp/target && cmake .. && make demo'
       }
+    }
 
-      stage("UnitTest") {
-        container('gtest') {
-          sh 'cd demo/cpp/target && make demo_test && ./demo_test --gtest_output=xml:gtestresults.xml'
-        }
+    stage("UT") {
+      container('gtest') {
+        sh 'cd /tmp \
+              && wget https://github.com/oktal/pistache/archive/master.zip \
+              && unzip master.zip \
+              && cd pistache-master \
+              && cmake . && make && make install \
+              && ln -s /usr/local/lib64/libpistache.so /usr/lib/libpistache.so.0'
+        sh 'cd demo/cpp/target && make demo_test && ./demo_test --gtest_output=xml:gtestresults.xml'
+      }
+    }
+
+    stage("SonarCheck") {
+    }
+
+    stage("PushImage") {
+      container('docker') {
+        sh 'cd demo/cpp && docker build -t 100.100.0.13/app/demo-cpp:1.0 .'
+        // withCredentials([usernamePassword(credentialsId: 'd23f551a-1e55-4bea-a9fb-5098a9ac291d',
+        //   passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
+        //   sh "docker login http://100.100.0.13 -u $USERNAME -p $PASSWORD"
+        // }
+        sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
+        sh 'docker push 100.100.0.13/app/demo-cpp:1.0'
       }
     }
   }
+
+}
+
+podTemplate(label: label, cloud: 'kubernetes', 
+  containers: [
+    containerTemplate(name: 'jnlp',
+      ttyEnabled: true,
+      image: 'jenkins/jnlp-slave:alpine'),
+    containerTemplate(name: 'jmeter',
+      ttyEnabled: true,
+      image: 'justb4/jmeter:5.1.1',
+      command: 'cat')
+  ]) {
+
+  node(label) {
+    stage('DeployPrepare') {
+      container('jnlp') {
+        sh 'sleep 10'
+        git 'https://github.com/flyinghawkren/devops-plat.git'
+        sh '''sed -ie "s/BUILD_NUMBER/${BUILD_NUMBER}/g" demo/cpp/deployment.yaml'''
+      }
+    }
+    stage('DeployToK8s'){
+      kubernetesDeploy(
+      kubeconfigId: 'k8sconfig',
+      configs: 'demo/cpp/deployment.yaml',
+      enableConfigSubstitution: true)
+    }
+
+    stage('ST') {
+      sleep 10
+      container('jmeter') {
+        sh 'mkdir -p demo/cpp/test/report && jmeter -n -t demo/cpp/test/helloworld.jmx -l demo/cpp/test/report/result.jtl -e -o demo/cpp/test/report'
+        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/cpp/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
+      }
+    }
+  }
+
+}

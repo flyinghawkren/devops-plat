@@ -7,7 +7,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'maven',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.10:30001/devops/maven:jdk8-alpine'),
+      image: '100.100.0.13/devops/maven:jdk8-alpine'),
   containerTemplate(name: 'docker',
       ttyEnabled: true,
       command: 'cat',
@@ -33,11 +33,11 @@ podTemplate(label: label, cloud: 'kubernetes',
         }
       }
 
-      // stage('SonarCheck') {
-      //   container('maven') {
-      //     sh 'cd demo/java && mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
-      //   }
-      // }
+      stage('SonarCheck') {
+        container('maven') {
+          sh 'cd demo/java && mvn sonar:sonar -Dsonar.projectKey=java-web-test -Dsonar.host.url=http://100.100.0.13:9000 -Dsonar.login=50714ff191af11806fb9fc3c61117de1cf12dbf3'
+        }
+      }
 
       stage('UT') {
         container('maven') {
@@ -47,13 +47,13 @@ podTemplate(label: label, cloud: 'kubernetes',
     
       stage('PushImage') {
         container('docker') {
-          sh 'cd demo/java && docker build -t 100.100.0.10:30001/app/demo:1.0 .'
+          sh 'cd demo/java && docker build -t 100.100.0.13/app/demo:1.0 .'
           // withCredentials([usernamePassword(credentialsId: 'd23f551a-1e55-4bea-a9fb-5098a9ac291d',
           //   passwordVariable: 'PASSWORD', usernameVariable: 'USERNAME')]) {
           //   sh "docker login http://100.100.0.13 -u $USERNAME -p $PASSWORD"
           // }
-          // sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
-          sh 'docker push 100.100.0.10:30001/app/demo:1.0'
+          sh 'docker login -u admin -p Harbor12345 http://100.100.0.13'
+          sh 'docker push 100.100.0.13/app/demo:1.0'
         }
       }
     }

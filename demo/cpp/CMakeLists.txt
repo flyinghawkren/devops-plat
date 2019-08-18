@@ -17,7 +17,7 @@ file(GLOB_RECURSE TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/*.*)
 set(MAIN_FILE main.cpp)
 
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${MAIN_FILE})
-target_link_libraries(${PROJECT_NAME} pistache_static)
+target_link_libraries(${PROJECT_NAME} pistache)
 
 link_directories(${GTEST_DIR}/lib)
 add_executable(${PROJECT_NAME}_test ${SRC_FILES} ${TEST_FILES})

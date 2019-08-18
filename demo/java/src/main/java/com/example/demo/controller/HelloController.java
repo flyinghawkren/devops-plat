@@ -3,7 +3,7 @@ package com.example.demo.controller;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class HelloController {
@@ -14,8 +14,8 @@ public class HelloController {
         return str;
     }
 
-    @RequestMapping(value="/add/{a}/{b}", method=RequestMethod.GET)
-    public Integer add(@PathVariable Integer a,@PathVariable Integer b){
+    @RequestMapping(value="/add", method=RequestMethod.GET)
+    public Integer add(@RequestParam Integer a, @RequestParam Integer b){
         return a + b;
     }
 }

@@ -18,7 +18,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     hostPathVolume(hostPath: '/etc/docker/daemon.json', mountPath:'/etc/docker/daemon.json'),
     nfsVolume(mountPath: '/root/.m2/repository', serverAddress: '100.100.0.10', serverPath: '/nfsdata/maven')
   ]) {
-  
+
   node(label) {
 
     stage('Prepare') {
@@ -43,6 +43,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     stage('UT') {
       container('maven') {
         sh 'cd demo/java && mvn test'
+        jacoco classPattern: 'demo/java/target/classes', execPattern: 'demo/java/target/**.exec', sourcePattern: 'demo/java/src/main/java'
       }
     }
   

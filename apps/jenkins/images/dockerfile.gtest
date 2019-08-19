@@ -1,11 +1,21 @@
 FROM cmake:alpine
 
 ARG GTEST_VERSION=1.8.1
-
 RUN cd /tmp \
   && wget https://github.com/google/googletest/archive/release-${GTEST_VERSION}.tar.gz \
   && tar zxf release-${GTEST_VERSION}.tar.gz \
   && cd googletest-release-${GTEST_VERSION} \
   && cmake . && make && make install \
-  && rm -rf /tmp/googletest-release-${GTEST_VERSION} \
-  && rm /tmp/release-${GTEST_VERSION}.tar.gz
+  && rm -rf /tmp/googletest-release-${GTEST_VERSION} /tmp/release-${GTEST_VERSION}.tar.gz
+
+ARG LCOV_VERSION=1.14
+RUN apk add --no-cache perl \
+  && cd /tmp \
+  && wget https://github.com/linux-test-project/lcov/releases/download/v${LCOV_VERSION}/lcov-${LCOV_VERSION}.tar.gz \
+  && tar zxf lcov-${LCOV_VERSION}.tar.gz \
+  && cd lcov-${LCOV_VERSION} \
+  && make install \
+  && rm -rf /tmp/lcov-${LCOV_VERSION} /tmp/lcov-${LCOV_VERSION}.tar.gz
+
+RUN apk add --no-cache python python-dev py2-pip \
+  && pip install gcovr

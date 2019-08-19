@@ -7,11 +7,11 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'cmake',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.10:30001/devops/cmake:alpine'),
+      image: '100.100.0.13/devops/cmake:alpine'),
     containerTemplate(name: 'gtest',
       ttyEnabled: true,
       command: 'cat',
-      image: '100.100.0.10:30001/devops/gtest:1.8.1-alpine'),
+      image: '100.100.0.13/devops/gtest:1.8.1-alpine'),
     containerTemplate(name: 'docker',
       ttyEnabled: true,
       command: 'cat',
@@ -33,29 +33,36 @@ podTemplate(label: label, cloud: 'kubernetes',
 
     stage('Build') {
       container('cmake') {
-        sh 'cd /tmp \
+        sh '''cd /tmp \
               && wget https://github.com/oktal/pistache/archive/master.zip \
               && unzip master.zip \
               && cd pistache-master \
               && cmake . && make && make install \
-              && ln -s /usr/local/lib64/libpistache.so /usr/lib/libpistache.so.0'
+              && ln -s /usr/local/lib64/libpistache.so /usr/lib/libpistache.so.0 \
+              && rm -rf /tmp/master.zip /tmp/pistache-master'''
         sh 'mkdir -p demo/cpp/target && cd demo/cpp/target && cmake .. && make demo'
       }
     }
 
     stage("UT") {
       container('gtest') {
-        sh 'cd /tmp \
-              && wget https://github.com/oktal/pistache/archive/master.zip \
-              && unzip master.zip \
-              && cd pistache-master \
-              && cmake . && make && make install \
-              && ln -s /usr/local/lib64/libpistache.so /usr/lib/libpistache.so.0'
-        sh 'cd demo/cpp/target && make demo_test && ./demo_test --gtest_output=xml:gtestresults.xml'
+        sh '''mkdir -p demo/cpp/ut \
+          && cd demo/cpp/ut \
+          && cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_GCOV=1 \
+          && make demo_test \
+          && ./demo_test \
+          && lcov --base-directory .. --directory .. --capture --output-file report.info \
+          && genhtml -o coverage report.info \
+          && gcovr -r .. --branches --xml -o coverage.xml'''
       }
+      cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'demo/cpp/ut/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
     }
 
-    stage("SonarCheck") {
+    stage("CppCheck") {
+      container('gtest') {
+        sh 'cppcheck --enable=all --xml --xml-version=2 ./demo/cpp/inc ./demo/cpp/src ./demo/cpp/main.cpp 2>cppcheck_result.xml'
+      }
+      publishCppcheck pattern: 'cppcheck_result.xml'
     }
 
     stage("PushImage") {
@@ -102,7 +109,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     stage('ST') {
       sleep 10
       container('jmeter') {
-        sh 'mkdir -p demo/cpp/test/report && jmeter -n -t demo/cpp/test/helloworld.jmx -l demo/cpp/test/report/result.jtl -e -o demo/cpp/test/report'
+        sh 'mkdir -p demo/cpp/test/report && jmeter -n -t demo/cpp/test/jmeter/helloworld.jmx -l demo/cpp/test/report/result.jtl -e -o demo/cpp/test/report'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/cpp/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
       }
     }

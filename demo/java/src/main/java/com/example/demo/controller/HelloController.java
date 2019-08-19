@@ -10,7 +10,7 @@ public class HelloController {
 
     @RequestMapping(value="/", method=RequestMethod.GET)
     public String hello(){
-        String str = "Hello World! v1.0.0";
+        String str = "Hello World! v1.0.1";
         return str;
     }
 

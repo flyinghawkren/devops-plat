@@ -1,19 +1,19 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: helloworld
+  name: demo-java
 spec:
   selector:
     matchLabels:
-      app: helloworld
+      app: demo-java
   replicas: 1
   template:
     metadata:
       labels:
-        app: helloworld
+        app: demo-java
     spec:
       containers:
-      - name: helloworld
+      - name: demo-java
         image: 100.100.0.13/app/demo-java:1.0
         imagePullPolicy: Always
         env:
@@ -32,9 +32,9 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-    name: helloworld
+    name: demo-java
     labels:
-      name: helloworld
+      name: demo-java
 spec:
     type: NodePort
     ports:
@@ -42,4 +42,4 @@ spec:
       port: 8080
       nodePort: 30100
     selector:
-      app: helloworld
+      app: demo-java

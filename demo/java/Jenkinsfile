@@ -91,7 +91,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     stage('ST') {
       sleep 10
       container('jmeter') {
-        sh 'mkdir -p demo/java/test/report && jmeter -n -t demo/java/test/helloworld.jmx -l demo/java/test/report/result.jtl -e -o demo/java/test/report'
+        sh 'mkdir -p demo/java/test/report && jmeter -n -t demo/java/test/jmeter/helloworld.jmx -l demo/java/test/report/result.jtl -e -o demo/java/test/report'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/java/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
       }
     }

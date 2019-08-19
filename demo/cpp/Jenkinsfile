@@ -51,7 +51,8 @@ podTemplate(label: label, cloud: 'kubernetes',
           && cmake .. -DCMAKE_BUILD_TYPE=Debug -DENABLE_GCOV=1 \
           && make demo_test \
           && ./demo_test \
-          && '''
+          && lcov --base-directory .. --directory .. --capture --output-file report.info \
+          && genhtml -o coverage report.info'''
       }
     }
 

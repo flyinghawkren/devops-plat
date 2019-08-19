@@ -52,14 +52,16 @@ podTemplate(label: label, cloud: 'kubernetes',
           && make demo_test \
           && ./demo_test \
           && lcov --base-directory .. --directory .. --capture --output-file report.info \
-          && genhtml -o coverage report.info'''
+          && genhtml -o coverage report.info \
+          && gcovr -r .. --branches --xml -o coverage.xml'''
       }
     }
 
     stage("CppCheck") {
       container('gtest') {
-        sh 'cd demo/cpp/target && make demo_test && ./demo_test --gtest_output=xml:gtestresults.xml'
+        sh 'cppcheck --enable=all --xml --xml-version=2 ./demo/cpp/inc ./demo/cpp/src ./demo/cpp/main.cpp 2>cppcheck_result.xml'
       }
+      publishCppcheck pattern: 'cppcheck_result.xml'
     }
 
     stage("PushImage") {

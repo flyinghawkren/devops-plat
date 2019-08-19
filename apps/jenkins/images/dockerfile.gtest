@@ -16,3 +16,6 @@ RUN apk add --no-cache perl \
   && cd lcov-${LCOV_VERSION} \
   && make install \
   && rm -rf /tmp/lcov-${LCOV_VERSION} /tmp/lcov-${LCOV_VERSION}.tar.gz
+
+RUN apk add --no-cache python python-dev py2-pip \
+  && pip install gcovr

@@ -13,7 +13,7 @@ ENDIF()
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/inc)
 file(GLOB_RECURSE SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.*)
-file(GLOB_RECURSE TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/*.*)
+file(GLOB_RECURSE TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/test/unittest/*.*)
 set(MAIN_FILE main.cpp)
 
 add_executable(${PROJECT_NAME} ${SRC_FILES} ${MAIN_FILE})

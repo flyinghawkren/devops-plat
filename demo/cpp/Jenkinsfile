@@ -55,6 +55,7 @@ podTemplate(label: label, cloud: 'kubernetes',
           && genhtml -o coverage report.info \
           && gcovr -r .. --branches --xml -o coverage.xml'''
       }
+      cobertura autoUpdateHealth: false, autoUpdateStability: false, coberturaReportFile: 'demo/cpp/ut/coverage.xml', conditionalCoverageTargets: '70, 0, 0', failUnhealthy: false, failUnstable: false, lineCoverageTargets: '80, 0, 0', maxNumberOfBuilds: 0, methodCoverageTargets: '80, 0, 0', onlyStable: false, sourceEncoding: 'ASCII', zoomCoverageChart: false
     }
 
     stage("CppCheck") {
@@ -108,7 +109,7 @@ podTemplate(label: label, cloud: 'kubernetes',
     stage('ST') {
       sleep 10
       container('jmeter') {
-        sh 'mkdir -p demo/cpp/test/report && jmeter -n -t demo/cpp/test/helloworld.jmx -l demo/cpp/test/report/result.jtl -e -o demo/cpp/test/report'
+        sh 'mkdir -p demo/cpp/test/report && jmeter -n -t demo/cpp/test/jmeter/helloworld.jmx -l demo/cpp/test/report/result.jtl -e -o demo/cpp/test/report'
         publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/cpp/test/report', reportFiles: 'index.html', reportName: 'Jmeter Report', reportTitles: ''])
       }
     }

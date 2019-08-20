@@ -67,6 +67,10 @@ podTemplate(label: label, cloud: 'kubernetes',
     containerTemplate(name: 'jnlp',
       ttyEnabled: true,
       image: 'jenkins/jnlp-slave:alpine'),
+    containerTemplate(name: 'robotframework',
+      ttyEnabled: true,
+      image: 'asyrjasalo/restinstance',
+      command: 'cat'),
     containerTemplate(name: 'jmeter',
       ttyEnabled: true,
       image: 'justb4/jmeter:5.1.1',
@@ -87,8 +91,15 @@ podTemplate(label: label, cloud: 'kubernetes',
       configs: 'demo/java/deployment.yaml',
       enableConfigSubstitution: true)
     }
-
+    
     stage('ST') {
+      container('robotframework') {
+        sh 'export PYTHONPATH=/home/robot/src/ && cd demo/java/test/robotframwork && entrypoint robot --outputdir results atest/'
+        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true, reportDir: 'demo/java/test/robotframwork/results', reportFiles: 'report.html', reportName: 'Robot Report', reportTitles: ''])
+      }
+    }
+
+    stage('Performance') {
       sleep 10
       container('jmeter') {
         sh 'mkdir -p demo/java/test/report && jmeter -n -t demo/java/test/jmeter/helloworld.jmx -l demo/java/test/report/result.jtl -e -o demo/java/test/report'
